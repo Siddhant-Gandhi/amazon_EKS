@@ -1,0 +1,27 @@
+[
+    {
+      "ParameterKey": "NodeGroupName",
+      "ParameterValue": "sid_node_grp"
+    },
+    {
+      "ParameterKey": "WorkerGroupRoleName",
+      "ParameterValue": "workernoderole"
+    },
+    {
+        "ParameterKey": "InstanceType",
+        "ParameterValue": "t2.micro"
+    },
+    {
+        "ParameterKey": "EksClusterMinSize",
+        "ParameterValue": "3"    
+    },
+    {
+        "ParameterKey": "EksClusterDesiredSize",
+        "ParameterValue": "3"
+    
+    },
+    {
+        "ParameterKey": "EksClusterMaxSize",
+        "ParameterValue": "5"
+    }      
+]

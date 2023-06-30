@@ -1,0 +1,71 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: This template is creating node group inside EKS Cluster.
+
+Parameters:
+   
+  NodeGroupName:
+    Description: The name of the Eks cluster's node group being created
+    Type: String
+
+  WorkerGroupRoleName:
+    Description: The name of role being created for worker group
+    Type: String
+
+  InstanceType:
+    Description: Type of Instance you want to create as a worker nodes
+    Type: String
+
+  EksClusterMinSize:
+    Type: String
+   
+
+  EksClusterDesiredSize:
+    Type: String
+   
+
+  EksClusterMaxSize:
+    Type: String
+   
+Resources:
+  EKSNodegroupRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref WorkerGroupRoleName
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+  WorkerNodeGroup:
+    Type: AWS::EKS::Nodegroup
+    Properties:
+      ClusterName: 
+       Fn::ImportValue: eksclustername 
+      NodegroupName: !Ref NodeGroupName 
+      NodeRole: !GetAtt EKSNodegroupRole.Arn  
+      Subnets:
+       - Fn::ImportValue: Publicsubnet01 
+       - Fn::ImportValue: Publicsubnet02
+       - Fn::ImportValue: Publicsubnet03
+      ScalingConfig:
+        DesiredSize: !Ref EksClusterDesiredSize
+        MinSize: !Ref EksClusterMinSize 
+        MaxSize: !Ref EksClusterMaxSize
+      InstanceTypes: [!Ref InstanceType]
+        
+      # RemoteAccess:
+      #   Ec2SshKey: <YourEC2KeyPair>  
+
+Outputs:
+  WorkerNodeGroupARN:
+    Value: !Ref WorkerNodeGroup
+    Export:
+      Name: WorkerNodeGroup

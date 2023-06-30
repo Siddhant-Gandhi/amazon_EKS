@@ -1,0 +1,18 @@
+[
+    {
+      "ParameterKey": "EKSRoleName",
+      "ParameterValue": "sid-eks-role"
+    },
+    {
+      "ParameterKey": "EKSClusterName",
+      "ParameterValue": "Sid-eks-cluster"
+    },
+    {
+        "ParameterKey": "ECRName",
+        "ParameterValue": "siddhantrepo"
+    },
+    {
+        "ParameterKey": "EksVersion",
+        "ParameterValue": "1.27"
+    }
+]

@@ -1,0 +1,289 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: This template is creating a VPC with  3 public subnets.
+
+Parameters:
+
+  VpcName:
+    Description: The name of the VPC being created
+    Type: String
+
+  VpcCIDR:
+    Description: CidrBlock block of the VPC
+    Type: String
+
+  PublicSubnetCidrBlocks:
+    Description: CidrBlock blocks of the public subnets
+    Type: CommaDelimitedList
+
+  PrivateSubnetCidrBlocks:
+    Description: CidrBlock blocks of the public subnets
+    Type: CommaDelimitedList
+
+  CreateIGW:
+    Description: Should be true to create internet gateway and attach to the VPC
+    Type: String
+    Default: false  
+
+  CreateNatGW:
+    Description: Should be true to create nat gateway and attach to the route table
+    Type: String
+    Default: false
+
+Mappings:
+  AZRegions:
+    us-east-1:
+      AZs: [a, b, c] 
+
+Conditions:
+  CreateIGW: !Equals
+    - !Ref CreateIGW
+    - true   
+
+  CreateNatGW: !Equals
+    - !Ref CreateNatGW
+    - true        
+
+Resources:
+  VPCEKS:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags: 
+        - 
+          Key: "Name"
+          Value: !Ref VpcName
+
+  Publicsubnet01:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPCEKS
+      CidrBlock: !Select [0, !Ref PublicSubnetCidrBlocks]
+      MapPublicIpOnLaunch: true
+      AvailabilityZone:
+        Fn::Sub:
+          - "${AWS::Region}${AZ}"
+          - AZ: !Select [0, !FindInMap ["AZRegions", !Ref "AWS::Region", "AZs"]]
+      Tags:
+        - Key: Name
+          Value: !Sub
+            - "${VpcName}-${AWS::Region}${AZ}"
+            - AZ:
+                !Select [0, !FindInMap ["AZRegions", !Ref "AWS::Region", "AZs"]]
+              VpcName: !Ref VpcName      
+  Publicsubnet02:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPCEKS
+      CidrBlock: !Select [1, !Ref PublicSubnetCidrBlocks]
+      MapPublicIpOnLaunch: true
+      AvailabilityZone:
+        Fn::Sub:
+          - "${AWS::Region}${AZ}"
+          - AZ: !Select [1, !FindInMap ["AZRegions", !Ref "AWS::Region", "AZs"]]
+      Tags:
+        - Key: Name
+          Value: !Sub
+            - "${VpcName}-${AWS::Region}${AZ}"
+            - AZ:
+                !Select [1, !FindInMap ["AZRegions", !Ref "AWS::Region", "AZs"]]
+              VpcName: !Ref  VpcName    
+  PublicSubnet03:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPCEKS
+      CidrBlock: !Select [2, !Ref PublicSubnetCidrBlocks]
+      MapPublicIpOnLaunch: true
+      AvailabilityZone:
+        Fn::Sub:
+          - "${AWS::Region}${AZ}"
+          - AZ: !Select [2, !FindInMap ["AZRegions", !Ref "AWS::Region", "AZs"]]
+      Tags:
+        - Key: Name
+          Value: !Sub
+            - "${VpcName}-${AWS::Region}${AZ}"
+            - AZ:
+                !Select [2, !FindInMap ["AZRegions", !Ref "AWS::Region", "AZs"]]
+              VpcName: !Ref  VpcName    
+  PrivateSubnet01:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPCEKS
+      CidrBlock: !Select [0, !Ref PrivateSubnetCidrBlocks]
+      AvailabilityZone:
+        Fn::Sub:
+          - "${AWS::Region}${AZ}"
+          - AZ: !Select [0, !FindInMap ["AZRegions", !Ref "AWS::Region", "AZs"]]
+      Tags:
+        - Key: Name
+          Value: !Sub
+            - "${VpcName}-${AWS::Region}${AZ}"
+            - AZ:
+                !Select [0, !FindInMap ["AZRegions", !Ref "AWS::Region", "AZs"]]
+              VpcName: !Ref  VpcName      
+  PrivateSubnet02:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPCEKS
+      CidrBlock: !Select [1, !Ref PrivateSubnetCidrBlocks]
+      AvailabilityZone:
+        Fn::Sub:
+          - "${AWS::Region}${AZ}"
+          - AZ: !Select [1, !FindInMap ["AZRegions", !Ref "AWS::Region", "AZs"]]
+      Tags:
+        - Key: Name
+          Value: !Sub
+            - "${VpcName}-${AWS::Region}${AZ}"
+            - AZ:
+                !Select [1, !FindInMap ["AZRegions", !Ref "AWS::Region", "AZs"]]
+              VpcName: !Ref  VpcName    
+  PrivateSubnet03:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPCEKS
+      CidrBlock: !Select [2, !Ref PrivateSubnetCidrBlocks]
+      AvailabilityZone:
+        Fn::Sub:
+          - "${AWS::Region}${AZ}"
+          - AZ: !Select [2, !FindInMap ["AZRegions", !Ref "AWS::Region", "AZs"]]
+      Tags:
+        - Key: Name
+          Value: !Sub
+            - "${VpcName}-${AWS::Region}${AZ}"
+            - AZ:
+                !Select [2, !FindInMap ["AZRegions", !Ref "AWS::Region", "AZs"]]
+              VpcName: !Ref  VpcName  
+
+  PublicRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VPCEKS
+      Tags:
+        - Key: Name
+          Value: !Sub
+            - ${VpcName}-${AWS::Region}-public-rt
+            -  VpcName: !Ref  VpcName
+
+  PrivateRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VPCEKS
+      Tags:
+        - Key: Name
+          Value: !Sub
+            - ${VpcName}-${AWS::Region}-private-rt
+            -  VpcName: !Ref  VpcName  
+
+  RouteTableAssociationPublicsubnet01:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref Publicsubnet01
+      RouteTableId: !Ref PublicRouteTable  
+
+  RouteTableAssociationPublicsubnet02:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref Publicsubnet02
+      RouteTableId: !Ref PublicRouteTable  
+
+  RouteTableAssociationPublicSubnet3:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PublicSubnet03
+      RouteTableId: !Ref PublicRouteTable  
+
+  RouteTableAssociationPrivateSubnet1:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PrivateSubnet01
+      RouteTableId: !Ref PrivateRouteTable 
+
+  RouteTableAssociationPrivateSubnet2:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PrivateSubnet02
+      RouteTableId: !Ref PrivateRouteTable 
+
+  RouteTableAssociationPrivateSubnet3:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PrivateSubnet03
+      RouteTableId: !Ref PrivateRouteTable 
+
+  InternetGateway:
+    Type: "AWS::EC2::InternetGateway"
+    Condition: CreateIGW
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${VpcName}-igw
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    DependsOn: InternetGateway
+    Properties:
+      VpcId: !Ref VPCEKS
+      InternetGatewayId: !Ref InternetGateway
+    Condition: CreateIGW
+
+  InternetGatewayRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref InternetGateway
+    Condition: CreateIGW              
+
+  EIP:
+    Type: "AWS::EC2::EIP"
+    Condition: CreateNatGW
+    Properties:
+      Domain: vpc
+
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    Condition: CreateNatGW
+    DependsOn: EIP
+    Properties:
+      AllocationId: !GetAtt "EIP.AllocationId"
+      SubnetId: !Ref Publicsubnet01 
+      Tags:
+        - Key: Name
+          Value: !Sub
+            - ${VpcName}-nat
+            -  VpcName: !Ref  VpcName  
+
+  NatGatewayRoute:
+    Type: AWS::EC2::Route
+    Condition: CreateNatGW
+    DependsOn: NatGateway
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: "0.0.0.0/0"
+      NatGatewayId: !Ref NatGateway    
+
+
+Outputs:
+  PublicSubnetIds1:
+    Description: Public Subnet01 in the VPC
+    Value: !Ref  Publicsubnet01
+    Export:
+      Name: Publicsubnet01
+  PublicSubnetIds2:
+    Description: Public Subnet02 in the VPC
+    Value: !Ref Publicsubnet02
+    Export:
+      Name: Publicsubnet02
+  PublicSubnetIds3:
+    Description: Public Subnet03 in the VPC
+    Value: !Ref PublicSubnet03
+    Export:
+      Name: Publicsubnet03  
+  VpcId:
+    Description: The VPC Id
+    Value: !Ref VPCEKS
+    Export:
+      Name: vpceks

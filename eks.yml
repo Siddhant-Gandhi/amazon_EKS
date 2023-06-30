@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: This template is creating a EKS cluster.
+
+Parameters: 
+
+  EKSRoleName:
+    Description: The name of the Eks cluster role being created
+    Type: String
+
+  EKSClusterName:
+    Description: The name of the Eks cluster being created
+    Type: String
+
+  EksVersion:
+    Type: String
+
+  ECRName:
+    Type: String
+    
+
+
+Resources:
+
+ PublicRepositry:
+    Type: AWS::ECR::PublicRepository
+    Properties:
+      RepositoryName: !Ref ECRName
+ 
+ EKSMasterSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: This security group will gets associated with the resources that need to communicate with the EKS control plane.
+      VpcId: 
+        Fn::ImportValue: vpceks
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: '-1'
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: '-1'
+
+ EKSIAMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - 'eks.amazonaws.com'
+            Action:
+            - 'sts:AssumeRole'
+      RoleName: !Ref EKSRoleName
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+
+ EKSCluster:
+    Type: AWS::EKS::Cluster
+    Properties:
+      Name: !Ref EKSClusterName
+      RoleArn: !GetAtt EKSIAMRole.Arn
+      Version: !Ref EksVersion
+      ResourcesVpcConfig:
+          SecurityGroupIds:
+          - !Ref EKSMasterSecurityGroup
+          SubnetIds:
+           - Fn::ImportValue: Publicsubnet01
+           - Fn::ImportValue: Publicsubnet02
+           - Fn::ImportValue: Publicsubnet03
+          EndpointPublicAccess: true
+          EndpointPrivateAccess: false
+      Logging:
+        ClusterLogging: 
+           EnabledTypes: [Type: "api", Type: "audit", Type: "authenticator", Type: "controllerManager", Type: "scheduler" ]
+      
+          
+Outputs:
+  eksclustername:
+    Description: Name of eks cluster
+    Value: !Ref EKSCluster 
+    Export:
+      Name: eksclustername
+
+  
+  

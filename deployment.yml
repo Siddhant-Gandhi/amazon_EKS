@@ -1,0 +1,24 @@
+# creating a set of resources to be managed
+#Kubernetes Deployment to tell Kubernetes to manage a set of replicas of the Pod
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eks-deployment
+  namespace: default
+spec: #Pod spec, gave information about what actually went into the Pod;
+  replicas: 2 # A ReplicaSet — to make sure that a certain number of Pods are always available.
+  selector:
+    matchLabels:
+      app: nodejs
+  template:
+    metadata:
+      labels:
+        app: nodejs
+    spec:
+      imagePullSecrets:
+        - name: ecr-credentials
+      containers:
+        - name: sid-container
+          image: public.ecr.aws/v6d4w2e8/siddhantrepo:latest
+          ports:
+            - containerPort: 5000
